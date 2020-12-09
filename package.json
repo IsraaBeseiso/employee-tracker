@@ -2,7 +2,7 @@
   "name": "package",
   "version": "1.0.0",
   "description": "CLI employee CMS",
-  "main": "app.js",
+  "main": "employee_tracker",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -13,7 +13,7 @@
   "homepage": "https://github.com/IsraaBeseiso/employee-tracker",
   "dependencies": {
     "console.table": "^0.10.0",
-    "inquirer": "^7.0.0",
-    "mysql": "^2.18.1"
+    "inquirer": "^6.2.1",
+    "mysql": "^2.16.0"
   }
 }
