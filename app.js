@@ -11,15 +11,21 @@ var connection = mysql.createConnection({
     //your user name
     user:"root",
     //your password
-    password:"",
-    database: "schema"
+    password:"rootroot",
+    database: "employee_trakerDB"
 });
 
 connection.connect(function(err) {
     if (err)throw err;
-    runSearch();
+    console.log("connected as id " + connection.threadId);
+    connection.end();
 });
-
+// function viewEmployee () {
+//     connection.query("SELECT * FROM employees", function(err, res) {
+//         if (err) throw err;
+//         console.log(res);
+//     });
+// }
 
 function runSearch() {
     inquirer
@@ -37,7 +43,7 @@ function runSearch() {
           "exit"]
       })
       .then(function(answer) {
-        switch (task) {
+        switch (answer) {
         case "veiw employees":
           viewEmployee();
           break;
@@ -73,7 +79,7 @@ function runSearch() {
         }
       });
   }
-
+runSearch()
 // view employee
  function viewEmployee() {
     inquirer.prompt([
@@ -82,7 +88,7 @@ function runSearch() {
             type: "list",
             message: "view employee",
             choices: employees.map(obj => obj.name)
-        }
+        }])
         .then(function(answer) {
             var query = "SELECT e.id, e.first_name, e.last_name, r.title, d.name AS department, r.salary, CONCAT(m.first_name, ' ', m.last_name) AS manager"
             connection.query (query, { employee: answer.employee}, function(err, res) {
@@ -93,9 +99,10 @@ function runSearch() {
                  firstPrompt();
                 }
             })
-            
-    
-
+        })
+     }  
+     
+     
 // view employee by department
 function viewEmployeeByDepartment() {
     inquirer.prompt([
@@ -104,7 +111,7 @@ function viewEmployeeByDepartment() {
             type: "list",
             message: "view employee by department",
             choices: employees.map(obj => obj.name)
-        }
+        }])
         .then(function(answer) {
             var query = "SELECT e.id, e.first_name, e.last_name, r.title, d.name AS department, r.salary, CONCAT(m.first_name, ' ', m.last_name) AS manager"
             connection.query (query, { employee: answer.employee}, function(err, res) {
@@ -115,9 +122,11 @@ function viewEmployeeByDepartment() {
                  firstPrompt();
                 }
             })
+        })
+    }
 
 // viewed the employee by the manager
- function viewEmployeeByManager() {
+async function viewEmployeeByManeger() {
     let employees = await db.query('SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee');
     employees.push({ id: null, name: "Cancel" });
     let roles = await db.query('SELECT id, title FROM role');
@@ -250,21 +259,7 @@ async function removeRole() {
     })
 };
 
-// Add a new department to the database
-async function addDepartment() {
-    inquirer.prompt([
-        {
-            name: "depName",
-            type: "input",
-            message: "Enter new department:",
-            validate: confirmStringInput
-        }
-    ]).then(answers => {
-        db.query("INSERT INTO department (name) VALUES (?)", [answers.depName]);
-        console.log("\x1b[32m", `${answers.depName} was added to departments.`);
-        runApp();
-    })
-};
+
 
 // Remove a department from the database
 async function removeDepartment() {
