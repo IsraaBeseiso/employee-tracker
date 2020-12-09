@@ -26,6 +26,10 @@ CREATE TABLE department(
     PRIMARY KEY (ID)
   );
 
+DELETE FROM department WHERE id = department_id 
+DELETE FROM roles WHERE id = roles_id
+DELETE FROM employee WHERE id = employee_id
 
-  DELETE FROM employee_tracker WHERE manger = department 
+UPDATE FROM manager WHWERE id = manger_id 
+
   
