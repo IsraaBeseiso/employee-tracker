@@ -1,177 +1,138 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const printTable = require("console.table");
+const { addDepartment } = require("./addDepartment");
 
-let departments;
-let roles;
-let imployee;
-
-const db = new Database({
+var connection = mysql.createConnection({
     host: "localhost",
-    port: 3306,
-    user: "root",
-    password: "bAVqss3GpRKQ",
-    database: "employeeDB"
+    //your port;
+    port:3306,
+
+    //your user name
+    user:"root",
+    //your password
+    password:"",
+    database: "schema"
 });
 
-// Builds complete employee table
-async function showEmployeeSummary() {
-    console.log(' ');
-    await db.query('SELECT e.id, e.first_name AS First_Name, e.last_name AS Last_Name, title AS Title, salary AS Salary, name AS Department, CONCAT(m.first_name, " ", m.last_name) AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role r ON e.role_id = r.id INNER JOIN department d ON r.department_id = d.id', (err, res) => {
-        if (err) throw err;
-        console.table(res);
-        runApp();
-    });
-};
+connection.connect(function(err) {
+    if (err)throw err;
+    runSearch();
+});
 
-// Builds a table which shows existing roles and their departments
-async function showRoleSummary() {
-    console.log(' ');
-    await db.query('SELECT r.id, title, salary, name AS department FROM role r LEFT JOIN department d ON department_id = d.id', (err, res) => {
-        if (err) throw err;
-        console.table(res);
-        runApp();
-    })
-};
 
-// Builds a table which shows existing departments
-async function showDepartments() {
-    console.log(' ');
-    await db.query('SELECT id, name AS department FROM department', (err, res) => {
-        if (err) throw err;
-        console.table(res);
-        runApp();
-    })
-};
+function runSearch() {
+    inquirer
+      .prompt({
+        name: "task",
+        type: "list",
+        message: "What would you like to do?",
+        choices: [
+          "view employees",
+          "view employee by department",
+          "add employees",
+          "remove employees",
+          "update employee",
+          "add role",
+          "exit"]
+      })
+      .then(function(answer) {
+        switch (task) {
+        case "veiw employees":
+          viewEmployee();
+          break;
+  
+        case "view employee by department":
+          viewEmployeeByDepartment();
+          break;
 
-// Called inside inquirers to check that the user isn't just trying to fill spots with empty space
-async function confirmStringInput(input) {
-    if ((input.trim() != "") && (input.trim().length <= 30)) {
-        return true;
-    }
-    return "Invalid input. Please limit your input to 30 characters or less."
-};
+          case "view employee by manger":
+              viewEmployeeByManeger();
+              break;
+  
+        case "add employee":
+          addEmployee();
+          break;
+  
+        case "remove employee":
+          removeEmployee();
+          break;
+  
+        case "update employee":
+          updateEmployee();
+          break;
 
-// Adds a new employee after asking for name, role, and manager
-async function addEmployee() {
-    let positions = await db.query('SELECT id, title FROM role');
-    let managers = await db.query('SELECT id, CONCAT(first_name, " ", last_name) AS Manager FROM employee');
-    managers.unshift({ id: null, Manager: "None" });
+          case "add role":
+              addRole();
+              break;
+            
+        case "exit":
+            connection.end();
+            break;
 
-    inquirer.prompt([
-        {
-            name: "firstName",
-            type: "input",
-            message: "Enter employee's first name:",
-            validate: confirmStringInput
-        },
-        {
-            name: "lastName",
-            type: "input",
-            message: "Enter employee's last name:",
-            validate: confirmStringInput
-        },
-        {
-            name: "role",
-            type: "list",
-            message: "Choose employee role:",
-            choices: positions.map(obj => obj.title)
-        },
-        {
-            name: "manager",
-            type: "list",
-            message: "Choose the employee's manager:",
-            choices: managers.map(obj => obj.Manager)
         }
-    ]).then(answers => {
-        let positionDetails = positions.find(obj => obj.title === answers.role);
-        let manager = managers.find(obj => obj.Manager === answers.manager);
-        db.query("INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?)", [[answers.firstName.trim(), answers.lastName.trim(), positionDetails.id, manager.id]]);
-        console.log("\x1b[32m", `${answers.firstName} was added to the employee database!`);
-        runApp();
-    });
-};
+      });
+  }
 
-// Removes an employee from the database
-async function removeEmployee() {
-    let employees = await db.query('SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee');
-    employees.push({ id: null, name: "Cancel" });
-
+// view employee
+ function viewEmployee() {
     inquirer.prompt([
         {
             name: "employeeName",
             type: "list",
-            message: "Remove which employee?",
+            message: "view employee",
             choices: employees.map(obj => obj.name)
         }
-    ]).then(response => {
-        if (response.employeeName != "Cancel") {
-            let unluckyEmployee = employees.find(obj => obj.name === response.employeeName);
-            db.query("DELETE FROM employee WHERE id=?", unluckyEmployee.id);
-            console.log("\x1b[32m", `${response.employeeName} was let go...`);
-        }
-        runApp();
-    })
-};
+        .then(function(answer) {
+            var query = "SELECT e.id, e.first_name, e.last_name, r.title, d.name AS department, r.salary, CONCAT(m.first_name, ' ', m.last_name) AS manager"
+            connection.query (query, { employee: answer.employee}, function(err, res) {
+                if (err) throw err;
+                for (var i =0; i < res.lenth; i++) {
+                    console.table(res);
+                 console.log("view employees\n");
+                 firstPrompt();
+                }
+            })
+            
+    
 
-// Change the employee's manager. Also prevents employee from being their own manager
-async function updateManager() {
-    let employees = await db.query('SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee');
-    employees.push({ id: null, name: "Cancel" });
-
+// view employee by department
+function viewEmployeeByDepartment() {
     inquirer.prompt([
         {
-            name: "empName",
+            name: "employeeName",
             type: "list",
-            message: "For which employee?",
+            message: "view employee by department",
             choices: employees.map(obj => obj.name)
         }
-    ]).then(employeeInfo => {
-        if (employeeInfo.empName == "Cancel") {
-            runApp();
-            return;
-        }
-        let managers = employees.filter(currEmployee => currEmployee.name != employeeInfo.empName);
-        for (i in managers) {
-            if (managers[i].name === "Cancel") {
-                managers[i].name = "None";
-            }
-        };
+        .then(function(answer) {
+            var query = "SELECT e.id, e.first_name, e.last_name, r.title, d.name AS department, r.salary, CONCAT(m.first_name, ' ', m.last_name) AS manager"
+            connection.query (query, { employee: answer.employee}, function(err, res) {
+                if (err) throw err;
+                for (var i =0; i < res.lenth; i++) {
+                    console.table(res);
+                 console.log("Employees viewed by department!\n");
+                 firstPrompt();
+                }
+            })
 
-        inquirer.prompt([
-            {
-                name: "mgName",
-                type: "list",
-                message: "Change their manager to:",
-                choices: managers.map(obj => obj.name)
-            }
-        ]).then(managerInfo => {
-            let empID = employees.find(obj => obj.name === employeeInfo.empName).id
-            let mgID = managers.find(obj => obj.name === managerInfo.mgName).id
-            db.query("UPDATE employee SET manager_id=? WHERE id=?", [mgID, empID]);
-            console.log("\x1b[32m", `${employeeInfo.empName} now reports to ${managerInfo.mgName}`);
-            runApp();
-        })
-    })
-};
-
-// Updates the selected employee's role
-async function updateEmployeeRole() {
+// viewed the employee by the manager
+ function viewEmployeeByManager() {
     let employees = await db.query('SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee');
     employees.push({ id: null, name: "Cancel" });
     let roles = await db.query('SELECT id, title FROM role');
 
     inquirer.prompt([
         {
-            name: "empName",
+            name: "manager",
             type: "list",
-            message: "For which employee?",
+            message: "choose the employee",
             choices: employees.map(obj => obj.name)
         },
         {
-            name: "newRole",
+            name: "employee role",
             type: "list",
-            message: "Change their role to:",
+            message: "view employee by manager",
             choices: roles.map(obj => obj.title)
         }
     ]).then(answers => {
@@ -221,7 +182,7 @@ async function addRole() {
     })
 };
 
-// Updates a role on the database
+// Updates a role 
 async function updateRole() {
     let roles = await db.query('SELECT id, title FROM role');
     roles.push({ id: null, title: "Cancel" });
@@ -327,133 +288,9 @@ async function removeDepartment() {
     })
 };
 
-// Options to make changes to employees specifically
-function editEmployeeOptions() {
-    inquirer.prompt({
-        name: "editChoice",
-        type: "list",
-        message: "What would you like to update?",
-        choices: [
-            "Add A New Employee",
-            "Change Employee Role",
-            "Change Employee Manager",
-            "Remove An Employee",
-            "Return To Main Menu"
-        ]
-    }).then(response => {
-        switch (response.editChoice) {
-            case "Add A New Employee":
-                addEmployee();
-                break;
-            case "Change Employee Role":
-                updateEmployeeRole();
-                break;
-            case "Change Employee Manager":
-                updateManager();
-                break;
-            case "Remove An Employee":
-                removeEmployee();
-                break;
-            case "Return To Main Menu":
-                runApp();
-                break;
-        }
-    })
-};
 
-// Options to make changes to roles
-function editRoleOptions() {
-    inquirer.prompt({
-        name: "editRoles",
-        type: "list",
-        message: "What would you like to update?",
-        choices: [
-            "Add A New Role",
-            "Update A Role",
-            "Remove A Role",
-            "Return To Main Menu"
-        ]
-    }).then(responses => {
-        switch (responses.editRoles) {
-            case "Add A New Role":
-                addRole();
-                break;
-            case "Update A Role":
-                updateRole();
-                break;
-            case "Remove A Role":
-                removeRole();
-                break;
-            case "Return To Main Menu":
-                runApp();
-                break;
-        }
-    })
-};
 
-// Options to make changes to departments
-function editDepartmentOptions() {
-    inquirer.prompt({
-        name: "editDeps",
-        type: "list",
-        message: "What would you like to update?",
-        choices: [
-            "Add A New Department",
-            "Remove A Department",
-            "Return To Main Menu"
-        ]
-    }).then(responses => {
-        switch (responses.editDeps) {
-            case "Add A New Department":
-                addDepartment();
-                break;
-            case "Remove A Department":
-                removeDepartment();
-                break;
-            case "Return To Main Menu":
-                runApp();
-                break;
-        }
-    })
-};
-
-// Main interface loop. Called after pretty much every function completes
-function runApp() {
-    inquirer.prompt({
-        name: "mainmenu",
-        type: "list",
-        message: "What would you like to do?",
-        choices: [
-            "View All Employees",
-            "Edit Employeee Info",
-            "View Roles",
-            "Edit Roles",
-            "View Departments",
-            "Edit Departments"
-        ]
-    }).then(responses => {
-        switch (responses.mainmenu) {
-            case "View All Employees":
-                showEmployeeSummary();
-                break;
-            case "Edit Employeee Info":
-                editEmployeeOptions();
-                break;
-            case "View Roles":
-                showRoleSummary();
-                break;
-            case "Edit Roles":
-                editRoleOptions();
-                break;
-            case "View Departments":
-                showDepartments();
-                break;
-            case "Edit Departments":
-                editDepartmentOptions();
-                break;
-        }
-    });
-}
+exports.runApp = runApp;
 
 console.log("_______  __   __  _______    _______  ______    _______  _______  ___   _  _______  ______\n|       ||  |_|  ||       |  |       ||    _ |  |   _   ||       ||   | | ||       ||    _ |\n|       ||       ||  _____|  |_     _||   | ||  |  |_|  ||       ||   |_| ||    ___||   | ||\n|       ||       || |_____     |   |  |   |_||_ |       ||       ||      _||   |___ |   |_||_ \n|      _||       ||_____  |    |   |  |    __  ||       ||      _||     |_ |    ___||    __  |\n|     |_ | ||_|| | _____| |    |   |  |   |  | ||   _   ||     |_ |    _  ||   |___ |   |  | |\n|_______||_|   |_||_______|    |___|  |___|  |_||__| |__||_______||___| |_||_______||___|  |_|\n\nVersion Almost\n");
 
