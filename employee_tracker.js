@@ -1,7 +1,7 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const printTable = require("console.table");
-const { addDepartment } = require("./addDepartment");
+//const { addDepartment } = require("./addDepartment");
 
 var connection = mysql.createConnection({
     host: "localhost",
@@ -18,14 +18,9 @@ var connection = mysql.createConnection({
 connection.connect(function(err) {
     if (err)throw err;
     console.log("connected as id " + connection.threadId);
-    connection.end();
+    //connection.end();
 });
-// function viewEmployee () {
-//     connection.query("SELECT * FROM employees", function(err, res) {
-//         if (err) throw err;
-//         console.log(res);
-//     });
-// }
+
 
 function runSearch() {
     inquirer
@@ -44,7 +39,7 @@ function runSearch() {
       })
       .then(function(answer) {
         switch (answer) {
-        case "veiw employees":
+        case "view employees":
           viewEmployee();
           break;
   
@@ -52,7 +47,7 @@ function runSearch() {
           viewEmployeeByDepartment();
           break;
 
-          case "view employee by manger":
+          case "view employee by manager":
               viewEmployeeByManeger();
               break;
   
@@ -68,9 +63,9 @@ function runSearch() {
           updateEmployee();
           break;
 
-          case "add role":
-              addRole();
-              break;
+        case "add role":
+            addRole();
+            break;
             
         case "exit":
             connection.end();
@@ -81,13 +76,14 @@ function runSearch() {
   }
 runSearch()
 // view employee
- function viewEmployee() {
+async function viewEmployee() {
+    let viewEmployee = await db.query('SELECT id, name FROM department');
     inquirer.prompt([
         {
             name: "employeeName",
             type: "list",
             message: "view employee",
-            choices: employees.map(obj => obj.name)
+            choices: employees.map(obj => ({value: obj.id, name:obj.name}))
         }])
         .then(function(answer) {
             var query = "SELECT e.id, e.first_name, e.last_name, r.title, d.name AS department, r.salary, CONCAT(m.first_name, ' ', m.last_name) AS manager"
@@ -238,7 +234,7 @@ async function updateRole() {
 };
 
 // Remove a role from the database
-async function removeRole() {
+async function deleteRole() {
     let roles = await db.query('SELECT id, title FROM role');
     roles.push({ id: null, title: "Cancel" });
 
@@ -246,7 +242,7 @@ async function removeRole() {
         {
             name: "roleName",
             type: "list",
-            message: "Remove which role?",
+            message: "Delete which role?",
             choices: roles.map(obj => obj.title)
         }
     ]).then(response => {
@@ -262,7 +258,7 @@ async function removeRole() {
 
 
 // Remove a department from the database
-async function removeDepartment() {
+async function deleteDepartment() {
     let departments = await db.query('SELECT id, name FROM department');
     departments.push({ id: null, name: "Cancel" });
 
@@ -270,7 +266,7 @@ async function removeDepartment() {
         {
             name: "depName",
             type: "list",
-            message: "Remove which department?",
+            message: "delete which department?",
             choices: departments.map(obj => obj.name)
         }
     ]).then(response => {
@@ -285,8 +281,8 @@ async function removeDepartment() {
 
 
 
-exports.runApp = runApp;
+//exports.runApp = runApp;
 
-console.log("_______  __   __  _______    _______  ______    _______  _______  ___   _  _______  ______\n|       ||  |_|  ||       |  |       ||    _ |  |   _   ||       ||   | | ||       ||    _ |\n|       ||       ||  _____|  |_     _||   | ||  |  |_|  ||       ||   |_| ||    ___||   | ||\n|       ||       || |_____     |   |  |   |_||_ |       ||       ||      _||   |___ |   |_||_ \n|      _||       ||_____  |    |   |  |    __  ||       ||      _||     |_ |    ___||    __  |\n|     |_ | ||_|| | _____| |    |   |  |   |  | ||   _   ||     |_ |    _  ||   |___ |   |  | |\n|_______||_|   |_||_______|    |___|  |___|  |_||__| |__||_______||___| |_||_______||___|  |_|\n\nVersion Almost\n");
+//console.log("_______  __   __  _______    _______  ______    _______  _______  ___   _  _______  ______\n|       ||  |_|  ||       |  |       ||    _ |  |   _   ||       ||   | | ||       ||    _ |\n|       ||       ||  _____|  |_     _||   | ||  |  |_|  ||       ||   |_| ||    ___||   | ||\n|       ||       || |_____     |   |  |   |_||_ |       ||       ||      _||   |___ |   |_||_ \n|      _||       ||_____  |    |   |  |    __  ||       ||      _||     |_ |    ___||    __  |\n|     |_ | ||_|| | _____| |    |   |  |   |  | ||   _   ||     |_ |    _  ||   |___ |   |  | |\n|_______||_|   |_||_______|    |___|  |___|  |_||__| |__||_______||___| |_||_______||___|  |_|\n\nVersion Almost\n");
 
-runApp();
+//runApp();

@@ -1,5 +1,5 @@
 const inquirer = require("inquirer");
-const { runApp } = require("./app");
+const { runApp } = require("./employee_tracker");
 
 // Adds a new department
 function addDepartment() {

@@ -4,6 +4,7 @@
   "description": "CLI employee CMS",
   "main": "employee_tracker",
   "scripts": {
+    "start": "node employee_tracker",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
